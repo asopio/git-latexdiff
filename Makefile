@@ -7,6 +7,8 @@ ifndef BASH_PATH
 	BASH_PATH = /bin/bash
 endif
 
+A2X = a2x
+
 # a2x sometimes need $XML_CATALOG_FILES to be set. If a2x fails, retry
 # with XML_CATALOG_FILES set to these files, if they exist. See
 # https://gitlab.com/git-latexdiff/git-latexdiff/issues/35#note_119280499
@@ -50,12 +52,22 @@ git-latexdiff.txt: git-latexdiff git-latexdiff.txt.header
 	  printf '%s\n' ------------ ) > $@
 
 git-latexdiff.1: git-latexdiff.txt
-	a2x --doctype manpage --format manpage $< || { \
+# Just check for the presence of a2x before using it, to give a
+# user-friendly error message.
+	@command -v $(A2X) 2>&1 >/dev/null || { \
+		echo; \
+		echo "    ERROR: Command $(A2X) not found. The man page cannot be generated."; \
+		echo "    Either install asciidoc and retry, or install latexdiff without"; \
+		echo "    the man page using \"$(MAKE) install-bin."; \
+		echo; \
+		exit 1; \
+	}
+	$(A2X) --doctype manpage --format manpage $< || { \
 		for f in $(TRY_XML_CATALOG_FILES); do \
 			if [ -f $$f ]; then \
-				echo "a2x failed, retrying with XML_CATALOG_FILES=$$f" ;\
+				echo "$(A2X) failed, retrying with XML_CATALOG_FILES=$$f" ;\
 				XML_CATALOG_FILES=$$f \
-				a2x --doctype manpage --format manpage $< && exit 0; \
+				$(A2X) --doctype manpage --format manpage $< && exit 0; \
 			fi ; \
 		done ; \
 	}
