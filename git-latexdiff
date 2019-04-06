@@ -228,7 +228,7 @@ bbl=0
 latexdiff_flatten=0
 latex=0
 xelatex=0
-
+BIBTEX_EXEC=bibtex
 
 while test $# -ne 0; do
     case "$1" in
@@ -455,6 +455,10 @@ else
     LATEX_EXEC=pdflatex
 fi
 
+if test $biber = 1; then
+    BIBTEX_EXEC=biber
+fi
+
 ## end option parsing ##
 
 check_knitr () {
@@ -648,9 +652,9 @@ if test "$flatten" = 1; then
 		compile_error=1
 		error_msg="command 'pdflatex' (automatically run in old due to --bbl) failed."
 	    }
-	    log_cmd bibtex0.log bibtex "$mainbase" || {
+	    log_cmd "$BIBTEX_EXEC"0.log $BIBTEX_EXEC "$mainbase" || {
 		compile_error=1
-		error_msg="command 'bibtex' (automatically run in old due to --bbl) failed."
+		error_msg="command '$BIBTEX_EXEC' (automatically run in old due to --bbl) failed."
 	    }
 	    cd "$oldPWD"
 	    ignore_errors_maybe
@@ -666,9 +670,9 @@ if test "$flatten" = 1; then
 		compile_error=1
 		error_msg="command 'pdflatex' (automatically run in new due to --bbl) failed."
 	    }
-	    log_cmd bibtex0.log bibtex "$mainbase" || {
+	    log_cmd "$BIBTEX_EXEC"0.log $BIBTEX_EXEC "$mainbase" || {
 		compile_error=1
-		error_msg="command 'bibtex' (automatically run in new due to --bbl) failed."
+		error_msg="command '$BIBTEX_EXEC' (automatically run in new due to --bbl) failed."
 	    }
 	    cd "$oldPWD"
 	    ignore_errors_maybe
@@ -730,16 +734,10 @@ else
 	compile_error=1
 	error_msg="command pdflatex (first run) failed."
     }
-    if test "$bibtex" = 1 ; then
-	log_cmd bibtex.log bibtex "$mainbase" || {
+    if test "$bibtex" = 1 || test "$biber" = 1 ; then
+	log_cmd "$BIBTEX_EXEC".log $BIBTEX_EXEC "$mainbase" || {
 	    compile_error=1
-	    error_msg="command 'bibtex' failed."
-	}
-    fi
-    if test "$biber" = 1 ; then
-	log_cmd biber.log biber "$mainbase" || {
-	    compile_error=1
-	    error_msg="command 'biber' failed."
+	    error_msg="command '$BIBTEX_EXEC' failed."
 	}
     fi
     log_cmd pdflatex2.log $LATEX_EXEC $latexopt "$mainbase" || {
