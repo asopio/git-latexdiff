@@ -644,7 +644,7 @@ if test "$flatten" = 1; then
 	    verbose "Attempting to regenerate missing old/$maindir$mainbase.bbl"
 	    oldPWD=$PWD
 	    cd old/"$maindir"
-	    log_cmd pdflatex0.log pdflatex $latexopt "$mainbase" || compile_error=1
+	    log_cmd pdflatex0.log $LATEX_EXEC $latexopt "$mainbase" || compile_error=1
 	    log_cmd bibtex0.log bibtex "$mainbase" || compile_error=1
 	    cd "$oldPWD"
 	    ignore_errors_maybe
