@@ -93,10 +93,18 @@ Options:
     --no-view             don't display the resulting PDF file
     --latex               run latex instead of pdflatex
     --xelatex             run xelatex instead of pdflatex
-    --bibtex, -b          run bibtex as well as latex
+    --bibtex, --bbl       display changes in the bibliography
+                             (runs bibtex to generate *.bbl files and
+                             include them in the source file using
+                             latexpand --expand-bbl before computing
+                             the diff)
+    --biber               like --bibtex, but runs biber instead.
+    --run-bibtex, -b      run bibtex as well as latex to generate the PDF file
                              (pdflatex,bibtex,pdflatex,pdflatex)
-    --biber               run BibLaTex-Biber as well as latex
+                          NOTE: --bibtex usually works better
+    --run-biber           run BibLaTex-Biber as well as latex to generate the PDF file
                              (pdflatex,biber,pdflatex,pdflatex)
+                          NOTE: --biber usually works better
     --view                view the resulting PDF file
                             (default if -o is not used)
     --pdf-viewer <cmd>    use <cmd> to view the PDF file (default: \$PDFVIEWER)
@@ -137,7 +145,6 @@ Options:
                           a PDF file is produced
     --ignore-makefile     ignore the Makefile, build as though it doesn't exist
     -*                    other options are passed directly to latexdiff
-    --bbl                 shortcut to flatten a bbl file of the same name as the project
     --latexpand OPT       pass option OPT to latexpand. Use multiple times like
                           --latexpand OPT1 --latexpand OPT2 to pass multiple options.
     --latexdiff-flatten   use --flatten from latexdiff instead of latexpand
@@ -285,7 +292,7 @@ while test $# -ne 0; do
 	    cleanup=all
 	    ;;
 	"-b"|"--bibtex")
-	    bibtex=1
+	    bbl=1
 	    ;;
 	"--latex")
 	    latex=1
@@ -294,8 +301,15 @@ while test $# -ne 0; do
             xelatex=1
             ;;
 	"--biber")
-	    biber=1
+	    BIBTEX_EXEC=biber
+	    bbl=1
 	    ;;
+	"--run-bibtex")
+	    bibtex=1
+	    ;;
+	"--run-biber")
+	    biber=1
+	    ;;	
 	"--verbose"|"-v")
 	    verbose=1
 	    ;;
