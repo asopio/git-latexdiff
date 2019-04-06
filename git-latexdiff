@@ -644,8 +644,14 @@ if test "$flatten" = 1; then
 	    verbose "Attempting to regenerate missing old/$maindir$mainbase.bbl"
 	    oldPWD=$PWD
 	    cd old/"$maindir"
-	    log_cmd pdflatex0.log $LATEX_EXEC $latexopt "$mainbase" || compile_error=1
-	    log_cmd bibtex0.log bibtex "$mainbase" || compile_error=1
+	    log_cmd pdflatex0.log $LATEX_EXEC $latexopt "$mainbase" || {
+		compile_error=1
+		error_msg="command 'pdflatex' (automatically run in old due to --bbl) failed."
+	    }
+	    log_cmd bibtex0.log bibtex "$mainbase" || {
+		compile_error=1
+		error_msg="command 'bibtex' (automatically run in old due to --bbl) failed."
+	    }
 	    cd "$oldPWD"
 	    ignore_errors_maybe
 	    if [ "$compile_error" = 1 ]; then
@@ -656,8 +662,14 @@ if test "$flatten" = 1; then
 	    verbose "Attempting to regenerate missing new/$maindir$mainbase.bbl"
 	    oldPWD=$PWD
 	    cd new/"$maindir"
-	    log_cmd pdflatex0.log $LATEX_EXEC $latexopt "$mainbase" || compile_error=1
-	    log_cmd bibtex0.log bibtex "$mainbase" || compile_error=1
+	    log_cmd pdflatex0.log $LATEX_EXEC $latexopt "$mainbase" || {
+		compile_error=1
+		error_msg="command 'pdflatex' (automatically run in new due to --bbl) failed."
+	    }
+	    log_cmd bibtex0.log bibtex "$mainbase" || {
+		compile_error=1
+		error_msg="command 'bibtex' (automatically run in new due to --bbl) failed."
+	    }
 	    cd "$oldPWD"
 	    ignore_errors_maybe
 	    if [ "$compile_error" = 1 ]; then
@@ -704,19 +716,40 @@ verbose "Compiling result"
 compile_error=0
 cd new/"$maindir" || die "Can't cd to new/$maindir"
 if test -f Makefile && test "$ignoremake" != 1 ; then
-    log_cmd make.log make || compile_error=1
+    log_cmd make.log make || {
+	compile_error=1
+	error_msg="command 'make' failed."
+    }
 elif test "$uselatexmk" = 1; then
-    log_cmd latexmk.log latexmk -f -pdf -silent $latexopt "$mainbase" || compile_error=1
+    log_cmd latexmk.log latexmk -f -pdf -silent $latexopt "$mainbase" || {
+	compile_error=1
+	error_msg="command 'latexmk' failed."
+    }
 else
-    log_cmd pdflatex1.log $LATEX_EXEC $latexopt "$mainbase" || compile_error=1
+    log_cmd pdflatex1.log $LATEX_EXEC $latexopt "$mainbase" || {
+	compile_error=1
+	error_msg="command pdflatex (first run) failed."
+    }
     if test "$bibtex" = 1 ; then
-	log_cmd bibtex.log bibtex "$mainbase" || compile_error=1
+	log_cmd bibtex.log bibtex "$mainbase" || {
+	    compile_error=1
+	    error_msg="command 'bibtex' failed."
+	}
     fi
     if test "$biber" = 1 ; then
-	log_cmd biber.log biber "$mainbase" || compile_error=1
+	log_cmd biber.log biber "$mainbase" || {
+	    compile_error=1
+	    error_msg="command 'biber' failed."
+	}
     fi
-    log_cmd pdflatex2.log $LATEX_EXEC $latexopt "$mainbase" || compile_error=1
-    log_cmd pdflatex3.log $LATEX_EXEC $latexopt "$mainbase" || compile_error=1
+    log_cmd pdflatex2.log $LATEX_EXEC $latexopt "$mainbase" || {
+	compile_error=1
+	error_msg="command 'pdflatex' (second run) failed."
+    }
+    log_cmd pdflatex3.log $LATEX_EXEC $latexopt "$mainbase" || {
+	compile_error=1
+	error_msg="command 'pdflatex' (third run) failed."
+    }
 fi
 
 verbose_done
@@ -743,6 +776,7 @@ if test "$compile_error" = "1" ; then
     echo "Error during compilation. Please examine and cleanup if needed:"
     echo "Directory: $tmpdir/new/$maindir"
     echo "     File: $mainbase.tex"
+    echo "  Problem: $error_msg"
     # Don't clean up to let the user diagnose.
     exit 1
 fi
