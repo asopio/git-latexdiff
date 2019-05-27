@@ -93,6 +93,7 @@ Options:
     --no-view             don't display the resulting PDF file
     --latex               run latex instead of pdflatex
     --xelatex             run xelatex instead of pdflatex
+    --lualatex            run lualatex instead of pdflatex
     --bibtex, --bbl       display changes in the bibliography
                              (runs bibtex to generate *.bbl files and
                              include them in the source file using
@@ -235,6 +236,7 @@ bbl=0
 latexdiff_flatten=0
 latex=0
 xelatex=0
+lualatex=0
 BIBTEX_EXEC=bibtex
 
 while test $# -ne 0; do
@@ -300,6 +302,9 @@ while test $# -ne 0; do
 	"--xelatex")
             xelatex=1
             ;;
+	"--lualatex")
+	    lualatex=1
+	    ;;
 	"--biber")
 	    BIBTEX_EXEC=biber
 	    bbl=1
@@ -465,6 +470,8 @@ if test $latex = 1; then
     LATEX_EXEC=latex
 elif test $xelatex = 1; then
     LATEX_EXEC=xelatex
+elif test $lualatex = 1; then
+    LATEX_EXEC=lualatex
 else
     LATEX_EXEC=pdflatex
 fi
