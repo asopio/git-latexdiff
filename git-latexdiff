@@ -137,6 +137,8 @@ Options:
     --quiet               redirect output from subprocesses to log files
     --prepare <cmd>       run <cmd> before latexdiff (e.g. run make to generate
                              included files)
+    --filter <cmd>        run <cmd> after latexdiff and before compilation
+                             (e.g. to fix up latexdiff output)
     --ln-untracked        symlink uncommited files from the working directory
     --version             show git-latexdiff version.
     --subtree             checkout the tree at and below the main file
@@ -334,6 +336,10 @@ while test $# -ne 0; do
 	"--prepare")
 	    shift
 	    prepare_cmd="$1"
+	    ;;
+	"--filter")
+	    shift
+	    filter_cmd="$1"
 	    ;;
         "--build-dir")
 	    test $# -gt 1 && shift || die "missing argument for $1"
@@ -733,6 +739,15 @@ else
     verbose "mv ./diff.tex new/$main"
     mv -f new/"$main" new/"$main.orig"
     mv -f diff.tex new/"$main"
+    verbose_done
+fi
+
+if [ ! -z "$filter_cmd" ]; then
+    verbose "Running filter command $filter_cmd in new/"
+    ( cd "new/" && log_cmd filter.log eval "$filter_cmd" )
+    if [ ! -f "new/$main" ]; then
+	die "$filter_cmd removed new/$main."
+    fi
     verbose_done
 fi
 
