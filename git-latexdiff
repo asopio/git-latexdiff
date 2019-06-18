@@ -737,9 +737,7 @@ pdffile="$builddir/$mainbase".pdf
 if test ! -r "$pdffile" ; then
     echo "No PDF file generated."
     compile_error=1
-fi
-
-if test ! -s "$pdffile" ; then
+elif test ! -s "$pdffile" ; then
     echo "PDF file generated is empty."
     compile_error=1
 fi
