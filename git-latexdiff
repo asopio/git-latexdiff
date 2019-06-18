@@ -537,13 +537,6 @@ fi
 mainbase=$(basename "$main" .tex)
 maindir=$(dirname "$main")
 
-# create the build directory (containing the final PDFs) if the param was set
-if test -n "$use_build_dir" ; then
-    builddir="$maindir/$use_build_dir"
-else
-    builddir="$maindir"
-fi
-
 tmpdir=$tmpdir_prefix/git-latexdiff.$$
 mkdir "$tmpdir" || die "Cannot create temporary directory."
 
@@ -570,8 +563,20 @@ fi
 
 if test "$subtree" = 1 && test -n "$git_prefix"; then
     checkoutroot=$git_prefix
+    # create the build directory (containing the final PDFs) if the param was set
+    if test -n "$use_build_dir" ; then
+	builddir="$use_build_dir"
+    else
+	builddir="."
+    fi
 else
     checkoutroot="."
+    # create the build directory (containing the final PDFs) if the param was set
+    if test -n "$use_build_dir" ; then
+	builddir="$git_prefix/$use_build_dir"
+    else
+	builddir="$git_prefix"
+    fi
 fi
 
 # Checkout a subtree, without touching the index ("git checkout" would)
