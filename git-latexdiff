@@ -810,6 +810,8 @@ fi
 pdffile="$builddir/$mainbase".pdf
 if test ! -r "$pdffile" ; then
     echo "No PDF file generated."
+    echo "Working directory: $PWD"
+    echo "Expected PDF: $pdffile"
     compile_error=1
 elif test ! -s "$pdffile" ; then
     echo "PDF file generated is empty."
