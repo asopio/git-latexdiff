@@ -833,7 +833,7 @@ if test -n "$output" ; then
     pdffile="$output"
     echo "Output written on $pdffile"
 elif [ -f "$pdffile" ]; then
-    new_pdffile="$tmpdir"/"$pdffile"
+    new_pdffile="$tmpdir"/"$mainbase".pdf
     mv "$pdffile" "$new_pdffile"
     pdffile="$new_pdffile"
 fi
