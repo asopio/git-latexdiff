@@ -596,17 +596,17 @@ if test "$subtree" = 1 && test -n "$git_prefix"; then
     checkoutroot=$git_prefix
     # create the build directory (containing the final PDFs) if the param was set
     if test -n "$use_build_dir" ; then
-	builddir="$use_build_dir"
+	builddir="$git_prefix/$use_build_dir"
     else
-	builddir="."
+	builddir="$git_prefix"
     fi
 else
     checkoutroot="."
     # create the build directory (containing the final PDFs) if the param was set
     if test -n "$use_build_dir" ; then
-	builddir="$git_prefix/$use_build_dir"
+	builddir="$use_build_dir"
     else
-	builddir="$git_prefix"
+	builddir="."
     fi
 fi
 
