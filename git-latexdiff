@@ -759,6 +759,8 @@ fi
 verbose "Compiling result"
 
 compile_error=0
+
+oldPWD=$PWD
 cd new/"$maindir" || die "Can't cd to new/$maindir"
 if test -f Makefile && test "$ignoremake" != 1 ; then
     log_cmd make.log make || {
@@ -790,6 +792,11 @@ else
 	error_msg="command 'pdflatex' (third run) failed."
     }
 fi
+cd "$oldPWD"
+
+# Same relative path as where we've been called from, but in the
+# temporary new/ directory:
+cd new/"$git_prefix"
 
 verbose_done
 
