@@ -385,7 +385,7 @@ while test $# -ne 0; do
             else
 		case "$1" in
 		    '--type'|'-t'|'--subtype'|'-s'|'--floattype'|'-f'|\
-			'--config'|'-c'|'--preamble'|'-p'|'--encoding'|'-e'|\
+			'--config'|'-c'|'-p'|'--encoding'|'-e'|\
 			'--label'|'-L'|'--exclude-safecmd'|'-A'|\
 			'--replace-safecmd'|'--append-safecmd'|'-a'|\
 			'--exclude-textcmd'|'-X'|'--replace-textcmd'|\
@@ -397,6 +397,14 @@ while test $# -ne 0; do
 			# latexdiff => add both the option and its
 			# argument.
 			latexdiffopt+=("$1" "$2")
+			shift
+			;;
+		    '--preamble')
+			# Same, but with a file argument. Make it
+			# absolute to avoid issues when cd-ing
+			# somewhere else.
+			absolute="$(cd $(dirname "$2"); pwd)/$(basename "$2")"
+			latexdiffopt+=("$1" "$absolute")
 			shift
 			;;
 		    *)
