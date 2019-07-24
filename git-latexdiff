@@ -94,6 +94,7 @@ Options:
     --latex               run latex instead of pdflatex
     --xelatex             run xelatex instead of pdflatex
     --lualatex            run lualatex instead of pdflatex
+    --tectonic            run tectonic instead of pdflatex
     --bibtex, --bbl       display changes in the bibliography
                              (runs bibtex to generate *.bbl files and
                              include them in the source file using
@@ -239,6 +240,7 @@ latexdiff_flatten=0
 latex=0
 xelatex=0
 lualatex=0
+tectonic=0
 BIBTEX_EXEC=bibtex
 
 while test $# -ne 0; do
@@ -306,6 +308,9 @@ while test $# -ne 0; do
             ;;
 	"--lualatex")
 	    lualatex=1
+	    ;;
+	"--tectonic")
+	    tectonic=1
 	    ;;
 	"--biber")
 	    BIBTEX_EXEC=biber
@@ -486,6 +491,8 @@ elif test $xelatex = 1; then
     LATEX_EXEC=xelatex
 elif test $lualatex = 1; then
     LATEX_EXEC=lualatex
+elif test $tectonic = 1; then
+    LATEX_EXEC=tectonic
 else
     LATEX_EXEC=pdflatex
 fi
