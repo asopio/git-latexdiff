@@ -747,7 +747,7 @@ if test "$flatten" = 1; then
     verbose_done
 
     verbose "mv ./diff.tex new/$main"
-    mv -f new-"$mainbase"-fl.tex new-"$mainbase"-fl.tex.orig
+    mv -f new/"$main" new/"$main".orig
     mv -f diff.tex new/"$main"
     verbose_done
 else
