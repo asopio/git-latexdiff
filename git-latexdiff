@@ -676,7 +676,14 @@ fi
 
 # Shortcut to include bbl
 if test "$bbl" = 1; then
-    bblexpand=("--expand-bbl" "$mainbase.bbl")
+    if test "$biber" = 1; then
+	bblexpand=("--expand-bbl" "$mainbase.bbl")
+	# In theory, this (with recent enough latexpand) should work
+	# better. In practice it doesn't seem to work though.
+	# bblexpand=("--biber" "$mainbase.bbl")
+    else
+	bblexpand=("--expand-bbl" "$mainbase.bbl")
+    fi
 else
     bblexpand=()
 fi
