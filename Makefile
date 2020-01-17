@@ -73,4 +73,5 @@ git-latexdiff.1: git-latexdiff.txt
 	}
 
 install-doc: git-latexdiff.1
+	mkdir -p $(gitmanpath_SQ)/man1/
 	cp $< $(gitmanpath_SQ)/man1/
