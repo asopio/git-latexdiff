@@ -576,6 +576,7 @@ cd "$(git rev-parse --show-cdup)" || die "Can't cd back to repository root"
 git_dir=$(cd "$git_dir"; pwd)
 git_worktree=$(pwd)
 
+relative_main_dir=$(dirname "$main")
 # make main relative to git root directory
 if test -n "$git_prefix" ; then
     main=$git_prefix$main
@@ -609,20 +610,14 @@ fi
 
 if test "$subtree" = 1 && test -n "$git_prefix"; then
     checkoutroot=$git_prefix
-    # create the build directory (containing the final PDFs) if the param was set
-    if test -n "$use_build_dir" ; then
-	builddir="$git_prefix/$use_build_dir"
-    else
-	builddir="$git_prefix"
-    fi
 else
     checkoutroot="."
-    # create the build directory (containing the final PDFs) if the param was set
-    if test -n "$use_build_dir" ; then
-	builddir="$use_build_dir"
-    else
-	builddir="."
-    fi
+fi
+# create the build directory (containing the final PDFs) if the param was set
+if test -n "$use_build_dir" ; then
+    builddir="$use_build_dir"
+else
+    builddir="$relative_main_dir"
 fi
 
 # Checkout a subtree, without touching the index ("git checkout" would)
