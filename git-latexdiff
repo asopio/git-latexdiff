@@ -656,12 +656,14 @@ do
     verbose_done
 done
 
-if [ "$ignorelatexerrors" = 1 ]; then
-    latexopt="$latexopt -interaction=batchmode"
-elif [ "$quiet" = 1 ]; then
-    latexopt="$latexopt -interaction=nonstopmode"
-else
-    latexopt="$latexopt -interaction=errorstopmode"
+if test $tectonic != 1; then
+  if [ "$ignorelatexerrors" = 1 ]; then
+      latexopt="$latexopt -interaction=batchmode"
+  elif [ "$quiet" = 1 ]; then
+      latexopt="$latexopt -interaction=nonstopmode"
+  else
+      latexopt="$latexopt -interaction=errorstopmode"
+  fi
 fi
 
 # Option to use latexdiff --flatten instead of latexpand
@@ -788,6 +790,11 @@ elif test "$uselatexmk" = 1; then
     log_cmd latexmk.log latexmk -f -pdf -silent $latexopt "$mainbase" || {
 	compile_error=1
 	error_msg="command 'latexmk' failed."
+    }
+elif test "$tectonic" = 1; then
+    log_cmd tectonic.log tectonic $latexopt "$mainbase.tex" || {
+	compile_error=1
+	error_msg="command 'tectonic' failed."
     }
 else
     log_cmd pdflatex1.log $LATEX_EXEC $latexopt "$mainbase" || {
