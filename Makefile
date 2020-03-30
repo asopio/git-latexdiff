@@ -81,7 +81,18 @@ dist/git-latexdiff.zip: force
 	-$(RM) -fr dist/git-latexdiff/
 	mkdir -p dist/git-latexdiff/bin/ dist/git-latexdiff/man
 	$(MAKE) gitexecdir=$(PWD)/dist/git-latexdiff/bin gitmanpath=$(PWD)/dist/git-latexdiff/man/ install
-	./git-latexdiff --help > dist/git-latexdiff/README.txt
+	(sed -ne '1,/Installation/p' README.md | head -n -1 ;\
+	 echo 'The output of git-latexdiff -h is given below:' ;\
+	 echo ;\
+	 echo '```' ;\
+	 ./git-latexdiff --help ;\
+	echo '```' ;\
+	echo ;\
+	echo "Examples" ;\
+	echo "--------" ;\
+	echo ;\
+	./git-latexdiff --help-examples | grep -v "^Examples:" ;\
+	)> dist/git-latexdiff/README.md
 	cd dist/ && zip -r git-latexdiff.zip git-latexdiff
 	@echo "dist/git-latexdiff.zip generated."
 

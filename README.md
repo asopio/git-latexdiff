@@ -15,6 +15,26 @@ running `latexdiff` (this usually works better than using `latexdiff
 To get the manpage (needed to get `git-latexdiff --help` to work), you
 need the `a2x` tool from the asciidoc package.
 
+Copying
+-------
+
+git-latexdiff's main author is [Matthieu
+Moy](https://matthieu-moy.fr/). The script is freely distributable and
+modifyable under the terms of the simplified BSD licence.
+
+Documentation
+-------------
+
+The documentation is available through these commands:
+
+    git-latexdiff -h
+    git-latexdiff --help-examples
+
+If you installed the manpage properly, you can get the same
+documentation with:
+
+    man git-latexdiff
+
 Installation
 ------------
 
@@ -52,16 +72,3 @@ To get the documentation, you need to generate it:
 
 and then copy `git-latexdiff.1` in your man-path (run `git --man-path`
 to get the location).
-
-Documentation
--------------
-
-The documentation is available through these commands:
-
-    git-latexdiff -h
-    git-latexdiff --help-examples
-
-If you installed the manpage properly, you can get the same
-documentation with:
-
-    man git-latexdiff
