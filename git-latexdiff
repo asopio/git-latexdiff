@@ -597,6 +597,7 @@ cd "$(git rev-parse --show-cdup)" || die "Can't cd back to repository root"
 git_dir=$(cd "$git_dir"; pwd)
 git_worktree=$(pwd)
 
+relative_main_dir=$(dirname "$main")
 # make main relative to git root directory
 if test -n "$git_prefix" ; then
     main=$git_prefix$main
@@ -630,26 +631,20 @@ fi
 
 if test "$subtree" = 1 && test -n "$git_prefix"; then
     checkoutroot=$git_prefix
-    # create the build directory (containing the final PDFs) if the param was set
-    if test -n "$use_build_dir" ; then
-	builddir="$git_prefix/$use_build_dir"
-    else
-	builddir="$git_prefix"
-    fi
 else
     checkoutroot="."
-    # create the build directory (containing the final PDFs) if the param was set
-    if test -n "$use_build_dir" ; then
-	builddir="$use_build_dir"
-    else
-	builddir="."
-    fi
+fi
+# create the build directory (containing the final PDFs) if the param was set
+if test -n "$use_build_dir" ; then
+    builddir="$use_build_dir"
+else
+    builddir="$relative_main_dir"
 fi
 
 # Checkout a subtree, without touching the index ("git checkout" would)
 (cd "$git_dir" && git archive --format=tar "$old" "$checkoutroot") | tar -xf -
 # Also expand the possible submodules
-(cd "$git_worktree" && git submodule foreach 'git archive --format=tar "$sha1" | tar -xf - --directory '$tmpdir/old'/$path')
+(cd "$git_worktree" && git submodule foreach --recursive 'git archive --format=tar "$sha1" | tar -xf - --directory '$tmpdir/old'/$displaypath')
 verbose_progress
 cd ../new || die "Cannot cd to new/"
 if test "$new" == "--"; then
@@ -658,7 +653,7 @@ if test "$new" == "--"; then
 else
     # checkout new revision
     (cd "$git_dir" && git archive --format=tar "$new" "$checkoutroot") | tar -xf -
-    (cd "$git_worktree" && git submodule foreach 'git archive --format=tar "$sha1" | tar -xf - --directory '$tmpdir/new'/$path')
+    (cd "$git_worktree" && git submodule foreach --recursive 'git archive --format=tar "$sha1" | tar -xf - --directory '$tmpdir/new'/$displaypath')
 fi
 if test "$ln_untracked" = 1; then
     (
@@ -682,12 +677,14 @@ do
     verbose_done
 done
 
-if [ "$ignorelatexerrors" = 1 ]; then
-    latexopt="$latexopt -interaction=batchmode"
-elif [ "$quiet" = 1 ]; then
-    latexopt="$latexopt -interaction=nonstopmode"
-else
-    latexopt="$latexopt -interaction=errorstopmode"
+if test $tectonic != 1; then
+  if [ "$ignorelatexerrors" = 1 ]; then
+      latexopt="$latexopt -interaction=batchmode"
+  elif [ "$quiet" = 1 ]; then
+      latexopt="$latexopt -interaction=nonstopmode"
+  else
+      latexopt="$latexopt -interaction=errorstopmode"
+  fi
 fi
 
 # Option to use latexdiff --flatten instead of latexpand
@@ -814,6 +811,11 @@ elif test "$uselatexmk" = 1; then
     log_cmd latexmk.log latexmk -f -pdf -silent $latexopt "$mainbase" || {
 	compile_error=1
 	error_msg="command 'latexmk' failed."
+    }
+elif test "$tectonic" = 1; then
+    log_cmd tectonic.log tectonic $latexopt "$mainbase.tex" || {
+	compile_error=1
+	error_msg="command 'tectonic' failed."
     }
 else
     log_cmd pdflatex1.log $LATEX_EXEC $latexopt "$mainbase" || {
