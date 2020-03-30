@@ -22,7 +22,7 @@ gitmanpath_SQ = $(subst ','\'',$(gitmanpath))
 
 SCRIPT=git-latexdiff
 
-.PHONY: help install-bin install-doc install
+.PHONY: help install-bin install-doc install force
 help:
 	@echo 'This is the help target of the Makefile. Current configuration:'
 	@echo '  gitexecdir = $(gitexecdir_SQ)'
@@ -75,3 +75,14 @@ git-latexdiff.1: git-latexdiff.txt
 install-doc: git-latexdiff.1
 	mkdir -p $(gitmanpath_SQ)/man1/
 	cp $< $(gitmanpath_SQ)/man1/
+
+dist: dist/git-latexdiff.zip
+dist/git-latexdiff.zip: force
+	-$(RM) -fr dist/git-latexdiff/
+	mkdir -p dist/git-latexdiff/bin/ dist/git-latexdiff/man
+	$(MAKE) gitexecdir=$(PWD)/dist/git-latexdiff/bin gitmanpath=$(PWD)/dist/git-latexdiff/man/ install
+	./git-latexdiff --help > dist/git-latexdiff/README.txt
+	cd dist/ && zip -r git-latexdiff.zip git-latexdiff
+	@echo "dist/git-latexdiff.zip generated."
+
+force:
