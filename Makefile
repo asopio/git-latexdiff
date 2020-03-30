@@ -76,6 +76,14 @@ install-doc: git-latexdiff.1
 	mkdir -p $(gitmanpath_SQ)/man1/
 	cp $< $(gitmanpath_SQ)/man1/
 
+# Release checklist:
+# - git tag vX.Y
+# - git push --tags origin master
+# - Write release notes on gitlab: https://gitlab.com/latexpand/latexpand/tags
+# - make dist
+# - Upload git-latexdiff.zip to https://www.ctan.org/upload
+#   . email = git@matthieu-moy.fr
+#   . Suggested CTAN directory = /support/git-latexdiff
 dist: dist/git-latexdiff.zip
 dist/git-latexdiff.zip: force
 	-$(RM) -fr dist/git-latexdiff/
