@@ -72,3 +72,28 @@ To get the documentation, you need to generate it:
 
 and then copy `git-latexdiff.1` in your man-path (run `git --man-path`
 to get the location).
+
+Troubleshooting
+------------
+
+A majority of the issues you may encounter actually come from
+`latexdiff`. It is a good practice to check if `latexdiff` is properly
+installed and working by calling:
+
+    latexdiff --version
+
+### On Windows ###
+
+Windows users are likely to be using this tool inside the so-called
+"Git Bash for Windows" environment which is included in Git for
+Windows.
+
+In this environment, the provided version of perl might be unable to
+run `latexdiff`. You can install a different perl distribution, for
+instance [Strawberry Perl](http://strawberryperl.com). Then, you must
+put Strawberry Perl's folders before anything else in your `PATH` and
+run `latexdiff` and `git-latexdiff`.
+
+Such a change could interfere with the tools in the "Git Bash for
+Windows" environment, so the `PATH` change should be restricted to
+uses of `latexdiff`.
