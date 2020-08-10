@@ -644,7 +644,20 @@ fi
 # Checkout a subtree, without touching the index ("git checkout" would)
 (cd "$git_dir" && git archive --format=tar "$old" "$checkoutroot") | tar -xf -
 # Also expand the possible submodules
-(cd "$git_worktree" && git submodule foreach --recursive 'git archive --format=tar "$sha1" | tar -xf - --directory '$tmpdir/old'/$displaypath')
+(cd "$git_worktree" && git ls-tree "$old":"$checkoutroot"/ | grep '^[^ ]* commit ' | \
+    while read -r mod type id name; do
+        # Submodule's object may be in the submodule (if it was directly "git init && git add"-ed),
+        # or in .git/modules, if it was cloned using "git submodule update <repository> <path>".
+        ALTERNATES=
+        for d in "$name"/.git/objects/ .git/modules/"$name"/objects/; do
+            if test -d "$d"; then
+                ALTERNATES="$ALTERNATES":"$d"
+            fi
+        done
+        GIT_ALTERNATE_OBJECT_DIRECTORIES="$GIT_ALTERNATE_OBJECT_DIRECTORIES":"$ALTERNATES" \
+            git archive --format=tar "$id"^{tree} | tar -xf - --directory "$tmpdir/old/$name"
+    done
+)
 verbose_progress
 cd ../new || die "Cannot cd to new/"
 if test "$new" == "--"; then
