@@ -666,6 +666,8 @@ if test "$new" == "--"; then
 else
     # checkout new revision
     (cd "$git_dir" && git archive --format=tar "$new" "$checkoutroot") | tar -xf -
+    # In case the submodule isn't yet "git add && git commit"ed, its directory may not have been created.
+    (cd "$git_worktree" && git submodule foreach --recursive 'mkdir -p '$tmpdir/new'/$displaypath')
     (cd "$git_worktree" && git submodule foreach --recursive 'git archive --format=tar "$sha1" | tar -xf - --directory '$tmpdir/new'/$displaypath')
 fi
 if test "$ln_untracked" = 1; then
