@@ -500,7 +500,7 @@ case "$view" in
 esac
 
 if test $flatten = 1 &&
-    ! command -v latexpand 2>/dev/null; then
+    ! command -v latexpand >/dev/null 2>&1; then
     echo "Warning: latexpand not found. Falling back to latexdiff --flatten."
     latexdiff_flatten=1
     flatten=0
