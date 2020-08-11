@@ -547,7 +547,7 @@ check_org () {
             fi
         done
         if test -n "$init_file"; then
-            load_init_file="--eval \"(load \\\"~/.emacs\\\")\""
+            load_init_file="--eval \"(load \\\"$init_file\\\")\""
         fi
         prepare_cmd="emacs --batch $load_init_file \"$main\" -f org-latex-export-to-latex --kill"
     fi
