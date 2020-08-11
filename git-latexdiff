@@ -85,11 +85,16 @@ unset CDPATH
 git_latexdiff_version='@GIT_LATEXDIFF_VERSION@'
 
 git_latexdiff_compute_version () {
+    printf '%s' "git latexdiff version "
     if [ "$git_latexdiff_version" = '@GIT_LATEXDIFF''_VERSION@' ]; then
 	(cd "$(dirname "$0")" && git describe --tags HEAD 2>/dev/null || echo 'Unknown version')
     else
 	echo "$git_latexdiff_version"
     fi
+    echo
+    echo "Using external commands:"
+    command -v latexpand && latexpand --version
+    command -v latexdiff && latexdiff --version
 }
 
 usage () {
