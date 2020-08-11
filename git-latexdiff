@@ -533,7 +533,18 @@ check_knitr () {
 
 check_org () {
     if test -z "$prepare_cmd"; then
-        prepare_cmd="emacs --batch --eval \"(load \\\"~/.emacs\\\")\" \"$main\" -f org-latex-export-to-latex --kill"
+        init_file=
+        load_init_file=
+        for f in ~/.emacs ~/.emacs.el ~/.emacs.d/init.elc ~/.emacs.d/init.el; do
+            if test -f "$f"; then
+                init_file="$f"
+                break
+            fi
+        done
+        if test -n "$init_file"; then
+            load_init_file="--eval \"(load \\\"~/.emacs\\\")\""
+        fi
+        prepare_cmd="emacs --batch $load_init_file \"$main\" -f org-latex-export-to-latex --kill"
     fi
     main="${main%\.*}.tex"
 }
