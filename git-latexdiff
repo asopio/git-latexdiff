@@ -834,7 +834,7 @@ compile_error=0
 
 oldPWD=$PWD
 cd new/"$maindir" || die "Can't cd to new/$maindir"
-if test -f Makefile && test "$ignoremake" != 1 ; then
+if test -e Makefile && test "$ignoremake" != 1 ; then
     log_cmd make.log make || {
 	compile_error=1
 	error_msg="command 'make' failed."
