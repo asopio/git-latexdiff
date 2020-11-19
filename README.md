@@ -7,12 +7,12 @@ around [git](http://git-scm.com) and
 [latexdiff](https://www.ctan.org/pkg/latexdiff).
 
 If your LaTeX source is split accross several `*.tex` files,
-`git-latexdiff` can call
+`git latexdiff` can call
 [latexpand](https://www.ctan.org/pkg/latexpand) to expand it before
 running `latexdiff` (this usually works better than using `latexdiff
 --flatten`).
 
-To get the manpage (needed to get `git-latexdiff --help` to work), you
+To get the manpage (needed to get `git latexdiff --help` to work), you
 need the `a2x` tool from the asciidoc package.
 
 Copying
@@ -27,8 +27,8 @@ Documentation
 
 The documentation is available through these commands:
 
-    git-latexdiff -h
-    git-latexdiff --help-examples
+    git latexdiff -h
+    git latexdiff --help-examples
 
 If you installed the manpage properly, you can get the same
 documentation with:
