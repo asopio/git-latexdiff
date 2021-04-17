@@ -1,5 +1,5 @@
-gitexecdir = ${shell git --exec-path}
-gitmanpath = ${shell git --man-path}
+gitexecdir = ${DESTDIR}${shell git --exec-path}
+gitmanpath = ${DESTDIR}${shell git --man-path}
 
 -include ./config.mak
 
@@ -38,6 +38,7 @@ help:
 install: install-bin install-doc
 
 install-bin:
+	mkdir -p $(gitexecdir_SQ)
 	sed -e '1s|#!.*/bash|#!$(BASH_PATH_SQ)|' \
 	    -e 's|@GIT_LATEXDIFF_VERSION@|$(GIT_LATEXDIFF_VERSION)|' \
 	        $(SCRIPT) > '$(gitexecdir_SQ)/$(SCRIPT)'
