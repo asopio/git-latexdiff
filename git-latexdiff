@@ -416,7 +416,7 @@ while test $# -ne 0; do
             else
 		case "$1" in
 		    '--type'|'-t'|'--subtype'|'-s'|'--floattype'|'-f'|\
-			'--config'|'-c'|'-p'|'--encoding'|'-e'|\
+			'--config'|'-c'|'--encoding'|'-e'|\
 			'--label'|'-L'|'--exclude-safecmd'|'-A'|\
 			'--replace-safecmd'|'--append-safecmd'|'-a'|\
 			'--exclude-textcmd'|'-X'|'--replace-textcmd'|\
@@ -430,13 +430,22 @@ while test $# -ne 0; do
 			latexdiffopt+=("$1" "$2")
 			shift
 			;;
-		    '--preamble')
+		    --preamble=*|-p*|"--preamble"|"-p")
 			# Same, but with a file argument. Make it
 			# absolute to avoid issues when cd-ing
 			# somewhere else.
-			absolute="$(cd $(dirname "$2"); pwd)/$(basename "$2")"
-			latexdiffopt+=("$1" "$absolute")
-			shift
+			doshift=1
+			if test "$1" = "--preamble" || test "$1" = "-p"; then
+				relative="$2"
+			else
+				relative="$(printf "%s" "$1" | sed 's/^--preamble=//;s/^-p//')"
+				doshift=0
+			fi
+			absolute="$(cd $(dirname "$relative"); pwd)/$(basename "$relative")"
+			latexdiffopt+=("-p" "$absolute")
+			if test $doshift = 1; then
+				shift
+			fi
 			;;
 		    *)
 			latexdiffopt+=("$1")
