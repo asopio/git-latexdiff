@@ -185,8 +185,6 @@ EOF
 
 examples () {
     cat <<EOF
-Examples:
-
 Diff the previous revision with the latest commit:
 
     git latexdiff HEAD^
@@ -207,6 +205,11 @@ instead of red+trike/blue+underline diff:
 Use a specific latexdiff configuration file:
 
     git latexdiff --config /path/to/file HEAD^
+
+Add a \\makeatletter statement to hopefuly fix some LaTeX compilation errors
+involving commands containing an @ character:
+
+    git latexdiff --latexpand --makeatletter HEAD^
 EOF
 }
 

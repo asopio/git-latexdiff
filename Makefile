@@ -48,9 +48,13 @@ git-latexdiff.txt: git-latexdiff git-latexdiff.txt.header
 	( cat git-latexdiff.txt.header ; \
 	  printf '%s\n' ------------ ; \
 	  ./git-latexdiff --help ; \
+	  printf '%s\n' ------------ ; \
+	  echo ; \
+	  echo 'EXAMPLES'; \
+	  echo '--------'; \
 	  echo ; \
 	  ./git-latexdiff --help-examples ; \
-	  printf '%s\n' ------------ ) > $@
+	  ) > $@
 
 git-latexdiff.1: git-latexdiff.txt
 # Just check for the presence of a2x before using it, to give a
