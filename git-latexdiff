@@ -167,6 +167,8 @@ Options:
     --filter <cmd>        run <cmd> after latexdiff and before compilation
                              (e.g. to fix up latexdiff output)
     --ln-untracked        symlink uncommited files from the working directory
+    --ln-untracked-dir <dir>
+                          symlink subdirectory of uncommited files (relative to the main .tex file)
     --version             show git-latexdiff version.
     --subtree             checkout the tree at and below the main file
                              (enabled by default, disable with --whole-tree)
@@ -260,6 +262,7 @@ uselatexmk=
 use_build_dir=
 latexopt=
 ln_untracked=0
+ln_untracked_dir=
 quiet=0
 ignorelatexerrors=0
 latexdiffopt=()
@@ -400,6 +403,10 @@ while test $# -ne 0; do
         "--ln-untracked")
             ln_untracked=1
             ;;
+        "--ln-untracked-dir")
+           shift
+           ln_untracked_dir=$1
+           ;;
         "--no-ln-untracked")
             ln_untracked=0
             ;;
@@ -657,6 +664,13 @@ if test "$ln_untracked" = 1; then
     ) || true
 fi
 
+if test -n "$ln_untracked_dir" ; then
+    (
+	mkdir -p "$maindir"/"$ln_untracked_dir" && cd "$maindir"/"$ln_untracked_dir" &&
+	    log_cmd ln-old.log ln -s "$initial_repo"/"$maindir"/"$ln_untracked_dir"/* .
+    ) || true
+fi
+
 if test "$subtree" = 1 && test -n "$git_prefix"; then
     checkoutroot=$git_prefix
 else
@@ -703,6 +717,13 @@ if test "$ln_untracked" = 1; then
     (
 	mkdir -p "$maindir" && cd "$maindir" &&
 	    log_cmd ln-new.log ln -s "$initial_repo"/"$maindir"/* .
+    ) || true
+fi
+
+if test -n "$ln_untracked_dir" ; then
+    (
+	mkdir -p "$maindir"/"$ln_untracked_dir" && cd "$maindir"/"$ln_untracked_dir" &&
+	    log_cmd ln-old.log ln -s "$initial_repo"/"$maindir"/"$ln_untracked_dir"/* .
     ) || true
 fi
 
