@@ -180,6 +180,8 @@ Options:
     --latexpand OPT       pass option OPT to latexpand. Use multiple times like
                           --latexpand OPT1 --latexpand OPT2 to pass multiple options.
     --latexdiff-flatten   use --flatten from latexdiff instead of latexpand
+    --early-exit-if-equal if two files are identical latexdiff will not be called and git-latexdiff exits gracefully.
+                          This option works only if latexpand is used
 
 Unrecognized options are passed unmodified to latexdiff.
 EOF
@@ -274,6 +276,9 @@ xelatex=0
 lualatex=0
 tectonic=0
 BIBTEX_EXEC=bibtex
+early_exit_if_equal=0
+
+run_latex_diff=1
 
 while test $# -ne 0; do
     case "$1" in
@@ -395,6 +400,9 @@ while test $# -ne 0; do
 	"--latexdiff-flatten")
 	    latexdiff_flatten=1
             flatten=0
+	    ;;
+	"--early-exit-if-equal")
+	  	early_exit_if_equal=1
 	    ;;
 	"--latexopt")
 	    shift
@@ -831,15 +839,24 @@ if test "$flatten" = 1; then
 	|| die "latexpand failed for new version"
     verbose_done
 
-    verbose "Running $LATEXDIFF_EXEC ${latexdiffopt[*]} old-${mainbase}-fl.tex new-${mainbase}-fl.tex > ./diff.tex"
-    "$LATEXDIFF_EXEC" "${latexdiffopt[@]}" old-"$mainbase"-fl.tex new-"$mainbase"-fl.tex > diff.tex \
-	|| die "$LATEXDIFF_EXEC failed"
-    verbose_done
+    if test "${early_exit_if_equal}" = 1 && cmp --s -- old-"${mainbase}"-fl.tex new-"${mainbase}"-fl.tex;
+    then
+      echo "As the two revisions are identical and --early-exit-if-equal was provided, exiting without running latexdiff."
+      run_latex_diff=0
+    fi
 
-    verbose "mv ./diff.tex new/$main"
-    mv -f new/"$main" new/"$main".orig
-    mv -f diff.tex new/"$main"
-    verbose_done
+    if test "${run_latex_diff}" = 1;
+    then
+      verbose "Running $LATEXDIFF_EXEC ${latexdiffopt[*]} old-${mainbase}-fl.tex new-${mainbase}-fl.tex > ./diff.tex"
+      "$LATEXDIFF_EXEC" "${latexdiffopt[@]}" old-"$mainbase"-fl.tex new-"$mainbase"-fl.tex > diff.tex \
+    || die "$LATEXDIFF_EXEC failed"
+      verbose_done
+
+      verbose "mv ./diff.tex new/$main"
+      mv -f new/"$main" new/"$main".orig
+      mv -f diff.tex new/"$main"
+      verbose_done
+    fi
 else
     verbose "Running $LATEXDIFF_EXEC ${latexdiffopt[*]} old/$main new/$main > ./diff.tex"
     "$LATEXDIFF_EXEC" "${latexdiffopt[@]}" old/"$main" new/"$main" > diff.tex \
@@ -852,107 +869,111 @@ else
     verbose_done
 fi
 
-if [ ! -z "$filter_cmd" ]; then
-    verbose "Running filter command $filter_cmd in new/"
-    ( cd "new/" && log_cmd filter.log eval "$filter_cmd" )
-    if [ ! -f "new/$main" ]; then
-	die "$filter_cmd removed new/$main."
-    fi
-    verbose_done
-fi
+if test "${run_latex_diff}" = 1; then
+  if [ ! -z "$filter_cmd" ]; then
+      verbose "Running filter command $filter_cmd in new/"
+      ( cd "new/" && log_cmd filter.log eval "$filter_cmd" )
+      if [ ! -f "new/$main" ]; then
+    die "$filter_cmd removed new/$main."
+      fi
+      verbose_done
+  fi
 
-verbose "Compiling result"
+  verbose "Compiling result"
 
-compile_error=0
+  compile_error=0
 
-oldPWD=$PWD
-cd new/"$maindir" || die "Can't cd to new/$maindir"
-if test -e Makefile && test "$ignoremake" != 1 ; then
-    log_cmd make.log make || {
-	compile_error=1
-	error_msg="command 'make' failed."
-    }
-elif test "$uselatexmk" = 1; then
-    log_cmd latexmk.log latexmk -f -pdf -silent $latexopt "$mainbase" || {
-	compile_error=1
-	error_msg="command 'latexmk' failed."
-    }
-elif test "$tectonic" = 1; then
-    log_cmd tectonic.log tectonic $latexopt "$mainbase.tex" || {
-	compile_error=1
-	error_msg="command 'tectonic' failed."
-    }
-else
-    log_cmd pdflatex1.log $LATEX_EXEC $latexopt "$mainbase" || {
-	compile_error=1
-	error_msg="command pdflatex (first run) failed."
-    }
-    if test "$bibtex" = 1 || test "$biber" = 1 ; then
-	log_cmd "$BIBTEX_EXEC".log $BIBTEX_EXEC "$mainbase" || {
-	    compile_error=1
-	    error_msg="command '$BIBTEX_EXEC' failed."
-	}
-    fi
-    log_cmd pdflatex2.log $LATEX_EXEC $latexopt "$mainbase" || {
-	compile_error=1
-	error_msg="command 'pdflatex' (second run) failed."
-    }
-    log_cmd pdflatex3.log $LATEX_EXEC $latexopt "$mainbase" || {
-	compile_error=1
-	error_msg="command 'pdflatex' (third run) failed."
-    }
-fi
-cd "$oldPWD"
-
-# Same relative path as where we've been called from, but in the
-# temporary new/ directory:
-cd new/"$git_prefix"
-
-verbose_done
-
-ignore_errors_maybe
-
-if test $latex = 1; then
-    dvips "$mainbase".dvi
-    ps2pdf "$mainbase".ps
-fi
-
-pdffile="$builddir/$mainbase".pdf
-if test ! -r "$pdffile" ; then
-    echo "No PDF file generated."
-    echo "Working directory: $PWD"
-    echo "Expected PDF: $pdffile"
+  oldPWD=$PWD
+  cd new/"$maindir" || die "Can't cd to new/$maindir"
+  if test -e Makefile && test "$ignoremake" != 1 ; then
+      log_cmd make.log make || {
     compile_error=1
-elif test ! -s "$pdffile" ; then
-    echo "PDF file generated is empty."
+    error_msg="command 'make' failed."
+      }
+  elif test "$uselatexmk" = 1; then
+      log_cmd latexmk.log latexmk -f -pdf -silent $latexopt "$mainbase" || {
     compile_error=1
-fi
+    error_msg="command 'latexmk' failed."
+      }
+  elif test "$tectonic" = 1; then
+      log_cmd tectonic.log tectonic $latexopt "$mainbase.tex" || {
+    compile_error=1
+    error_msg="command 'tectonic' failed."
+      }
+  else
+      log_cmd pdflatex1.log $LATEX_EXEC $latexopt "$mainbase" || {
+    compile_error=1
+    error_msg="command pdflatex (first run) failed."
+      }
+      if test "$bibtex" = 1 || test "$biber" = 1 ; then
+    log_cmd "$BIBTEX_EXEC".log $BIBTEX_EXEC "$mainbase" || {
+        compile_error=1
+        error_msg="command '$BIBTEX_EXEC' failed."
+    }
+      fi
+      log_cmd pdflatex2.log $LATEX_EXEC $latexopt "$mainbase" || {
+    compile_error=1
+    error_msg="command 'pdflatex' (second run) failed."
+      }
+      log_cmd pdflatex3.log $LATEX_EXEC $latexopt "$mainbase" || {
+    compile_error=1
+    error_msg="command 'pdflatex' (third run) failed."
+      }
+  fi
+  cd "$oldPWD"
 
-if test "$compile_error" = "1" ; then
-    echo "Error during compilation. Please examine and cleanup if needed:"
-    echo "Directory: $tmpdir/new/$maindir"
-    echo "     File: $mainbase.tex"
-    echo "  Problem: $error_msg"
-    # Don't clean up to let the user diagnose.
-    exit 1
-fi
+  # Same relative path as where we've been called from, but in the
+  # temporary new/ directory:
+  cd new/"$git_prefix"
 
-if test -n "$output" ; then
-    abs_pdffile="$PWD/$pdffile"
-    (cd "$initial_dir" && mv "$abs_pdffile" "$output")
-    pdffile="$output"
-    echo "Output written on $pdffile"
-elif [ -f "$pdffile" ]; then
-    new_pdffile="$tmpdir"/"$mainbase".pdf
-    mv "$pdffile" "$new_pdffile"
-    pdffile="$new_pdffile"
+  verbose_done
+
+  ignore_errors_maybe
+
+  if test $latex = 1; then
+      dvips "$mainbase".dvi
+      ps2pdf "$mainbase".ps
+  fi
+
+  pdffile="$builddir/$mainbase".pdf
+  if test ! -r "$pdffile" ; then
+      echo "No PDF file generated."
+      echo "Working directory: $PWD"
+      echo "Expected PDF: $pdffile"
+      compile_error=1
+  elif test ! -s "$pdffile" ; then
+      echo "PDF file generated is empty."
+      compile_error=1
+  fi
+
+  if test "$compile_error" = "1" ; then
+      echo "Error during compilation. Please examine and cleanup if needed:"
+      echo "Directory: $tmpdir/new/$maindir"
+      echo "     File: $mainbase.tex"
+      echo "  Problem: $error_msg"
+      # Don't clean up to let the user diagnose.
+      exit 1
+  fi
+
+  if test -n "$output" ; then
+      abs_pdffile="$PWD/$pdffile"
+      (cd "$initial_dir" && mv "$abs_pdffile" "$output")
+      pdffile="$output"
+      echo "Output written on $pdffile"
+  elif [ -f "$pdffile" ]; then
+      new_pdffile="$tmpdir"/"$mainbase".pdf
+      mv "$pdffile" "$new_pdffile"
+      pdffile="$new_pdffile"
+  fi
 fi
 
 # Change directory so nothing will keep us from cleaning
 cd "$initial_dir"
 
-if test "$view" = 1 || ( test "$view" = maybe  && test -z "$output" ) ; then
+if test "${run_latex_diff}" = 1; then
+  if test "$view" = 1 || ( test "$view" = maybe  && test -z "$output" ) ; then
     "$PDFVIEWER" "$pdffile"
+  fi
 fi
 
 case "$cleanup" in
