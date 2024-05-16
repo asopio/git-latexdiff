@@ -693,6 +693,7 @@ fi
 
 # Checkout a subtree, without touching the index ("git checkout" would)
 (cd "$git_dir" && git archive --format=tar "$old" "$checkoutroot") | tar -xf -
+
 # Also expand the possible submodules
 (cd "$git_worktree" && git ls-tree -r "$old":"$checkoutroot" | \
     { grep '^[^ ]* commit ' || true; } | \
@@ -702,11 +703,20 @@ fi
         ALTERNATES=
         for d in "$name"/.git/objects/ .git/modules/"$name"/objects/; do
             if test -d "$d"; then
-                ALTERNATES="$ALTERNATES":"$d"
+                if [ -z "${ALTERNATES}" ]; then
+                    ALTERNATES="$d"
+                else
+                    ALTERNATES="$ALTERNATES":"$d"
+                fi
             fi
         done
-        GIT_ALTERNATE_OBJECT_DIRECTORIES="$GIT_ALTERNATE_OBJECT_DIRECTORIES":"$ALTERNATES" \
-            git archive --format=tar "$id"^{tree} | tar -xf - --directory "$tmpdir/old/$name"
+        if [ -z "${GIT_ALTERNATE_OBJECT_DIRECTORIES}" ]; then
+            GIT_ALTERNATE_OBJECT_DIRECTORIES="$ALTERNATES" \
+                git archive --format=tar "$id"^{tree} | tar -xf - --directory "$tmpdir/old/$name"
+        else
+            GIT_ALTERNATE_OBJECT_DIRECTORIES="$GIT_ALTERNATE_OBJECT_DIRECTORIES":"$ALTERNATES" \
+                git archive --format=tar "$id"^{tree} | tar -xf - --directory "$tmpdir/old/$name"
+        fi
     done
 )
 verbose_progress
