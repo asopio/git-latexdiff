@@ -332,7 +332,9 @@ while test $# -ne 0; do
 	"-o"|"--output")
 	    test $# -gt 1 && shift || die "missing argument for $1"
 	    output=$1
-	    cleanup=all
+            if [ "$cleanup" = keeppdf ]; then
+	        cleanup=all
+            fi
 	    ;;
 	"-b"|"--bibtex")
 	    bbl=1
