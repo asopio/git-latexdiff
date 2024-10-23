@@ -692,6 +692,7 @@ if test -n "$use_build_dir" ; then
 else
     builddir="$relative_main_dir"
 fi
+pdffile="$builddir/$mainbase".pdf
 
 # Checkout a subtree, without touching the index ("git checkout" would)
 (cd "$git_dir" && git archive --format=tar "$old" "$checkoutroot") | tar -xf -
@@ -737,6 +738,8 @@ if test "$ln_untracked" = 1; then
     (
 	mkdir -p "$maindir" && cd "$maindir" &&
 	    log_cmd ln-new.log ln -s "$initial_repo"/"$maindir"/* .
+        # We'll write to this file, don't link it to the worktree, or we'll write to the worktree!
+        rm "$pdffile"
     ) || true
 fi
 
@@ -947,7 +950,6 @@ if test "${run_latex_diff}" = 1; then
       ps2pdf "$mainbase".ps
   fi
 
-  pdffile="$builddir/$mainbase".pdf
   if test ! -r "$pdffile" ; then
       echo "No PDF file generated."
       echo "Working directory: $PWD"
