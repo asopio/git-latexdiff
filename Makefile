@@ -91,8 +91,9 @@ install-doc: git-latexdiff.1
 dist: dist/git-latexdiff.zip
 dist/git-latexdiff.zip: force
 	-$(RM) -fr dist/git-latexdiff/
-	mkdir -p dist/git-latexdiff/bin/ dist/git-latexdiff/man
-	$(MAKE) gitexecdir=$(PWD)/dist/git-latexdiff/bin gitmanpath=$(PWD)/dist/git-latexdiff/man/ install
+	$(MAKE) gitexecdir=$(PWD)/dist/git-latexdiff install-bin ;\
+	$(MAKE) git-latexdiff.1 ;\
+	cp git-latexdiff.1 $(PWD)/dist/git-latexdiff ;\
 	(sed -ne '1,/Installation/p' README.md | head -n -1 ;\
 	 echo 'The output of git-latexdiff -h is given below:' ;\
 	 echo ;\
