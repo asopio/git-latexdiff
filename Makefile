@@ -86,9 +86,8 @@ install-doc: git-latexdiff.1
 # - git push --tags origin master
 # - Write release notes on gitlab: https://gitlab.com/git-latexdiff/git-latexdiff/-/tags
 # - make dist
-# - Upload git-latexdiff.zip to https://www.ctan.org/upload
+# - Upload git-latexdiff.zip to https://ctan.org/tex-archive/support/git-latexdiff -> Upload.
 #   . email = git@matthieu-moy.fr
-#   . Suggested CTAN directory = /support/git-latexdiff
 dist: dist/git-latexdiff.zip
 dist/git-latexdiff.zip: force
 	-$(RM) -fr dist/git-latexdiff/
