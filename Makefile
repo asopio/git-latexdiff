@@ -84,7 +84,7 @@ install-doc: git-latexdiff.1
 # Release checklist:
 # - git tag vX.Y
 # - git push --tags origin master
-# - Write release notes on gitlab: https://gitlab.com/latexpand/latexpand/tags
+# - Write release notes on gitlab: https://gitlab.com/git-latexdiff/git-latexdiff/-/tags
 # - make dist
 # - Upload git-latexdiff.zip to https://www.ctan.org/upload
 #   . email = git@matthieu-moy.fr
