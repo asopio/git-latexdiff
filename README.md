@@ -3,7 +3,8 @@ Own fork of Matthieu Moy's [git-latexdiff](https://gitlab.com/git-latexdiff/git-
 
 Includes fixes for compiling atlaslatex-style documents with Tectonic v2 (`tectonic -X compile` command).
 
-=============
+---
+
 Git LaTeXdiff
 =============
 
