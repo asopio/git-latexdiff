@@ -843,12 +843,206 @@ ignore_errors_maybe() {
 
 # Work around a latexdiff limitation with tables: when a deleted row ends
 # with '\\', latexdiff comments the row terminator out, which leaves the
-# table in horizontal mode so that a following booktabs rule (\toprule,
-# \midrule, ...) fails with "Misplaced \noalign". Reinsert the row
-# terminator before such rules.
+# table in horizontal mode so that a following table rule (\hline, \cline,
+# \toprule, \midrule, ...) fails with "Misplaced \noalign". Reinsert the
+# row terminator before such rules.
 fix_latexdiff_table_rules () {
-    sed -E 's/\\DIFdelend(FL)?[[:space:]]+(\\(toprule|midrule|bottomrule|cmidrule))/\\DIFdelend\1 \\\\ \2/g' "$1" > "$1.tmp" &&
+    sed -E 's/\\DIFdelend(FL)?[[:space:]]+(\\(hline|cline|toprule|midrule|bottomrule|cmidrule|heavyrule|lightrule))/\\DIFdelend\1 \\\\ \2/g' "$1" > "$1.tmp" &&
 	mv "$1.tmp" "$1"
+}
+
+# comment.sty's scanner for excluded environments only stops at a line that
+# is exactly "\end{comment}".  latexpand joins a section file that ends with
+# "\end{comment}" (no trailing newline) with the first line of the following
+# file (e.g. "\clearpage{}"), producing "\end{comment}\clearpage{}", which
+# makes the scanner run to EOF ("File ended while scanning use of \next").
+# Split such lines so that "\end{comment}" is alone on its line.
+fix_latexdiff_comment_ends () {
+    perl -i -pe 's/^\\end\{comment\}(\S.*)$/"\\end{comment}\n$1"/e' "$1"
+}
+
+# latexdiff sometimes word-diffs the *filename argument* of \includegraphics
+# (e.g. when a figure is renamed bin0 -> bin1), inserting \DIFdel/\DIFadd
+# markup inside the braces, which is fatal for the TeX engine.  The perl
+# program below reconstructs the old and new version of the whole command
+# from the DIF tokens (verified against the sources $2 and $3) and rewrites
+# the spot as a standard whole-command del/add pair.
+fix_latexdiff_includegraphics () {
+    local fixer
+    fixer=$(mktemp) || return
+    # the script runs with set -o noclobber, so remove the mktemp-created
+    # file before redirecting into it
+    rm -f "$fixer"
+    cat > "$fixer" <<'LATEXDIFF_FIXIG_PERL'
+# Finds every \includegraphics whose [options] or {filename} contain DIF
+# markup, reconstructs the old/new command from the DIF tokens and rewrites
+# the spot as:
+#
+#   \DIFdelbeginFL %DIFDELCMD < \includegraphics[...]{old}
+#   %DIFDELCMD < %%%
+#   \DIFdelendFL \DIFaddbeginFL \includegraphics[...]{new}
+#   \DIFaddendFL
+#
+use strict;
+use warnings;
+
+my ($difffile, $oldfl, $newfl) = @ARGV;
+die "usage: fix-dif-includegraphics DIFF.tex OLD-src.tex NEW-src.tex\n" unless $difffile && $oldfl && $newfl;
+
+sub slurp {
+    my ($f) = @_;
+    open my $fh, '<', $f or die "cannot read $f: $!";
+    local $/;
+    my $s = <$fh>;
+    close $fh;
+    return $s;
+}
+
+my $diff   = slurp($difffile);
+my $oldsrc = slurp($oldfl);
+my $newsrc = slurp($newfl);
+
+# --- tokenizer: split a command string into (type, text) tokens ----------
+# type: "plain" | "del" | "add".
+# A single separator space directly after a DIF construct is dropped from the
+# following plain text when $trim is set (latexdiff inserts such spaces
+# between tokens; they are not part of filenames).
+sub tokenize {
+    my ($s, $trim) = @_;
+    my @tok;
+    my $cur = "";
+    my $just_dif = 0;
+    while (length $s) {
+        if ($s =~ s/^\\DIFdelbegin(FL)?\s*//) {
+            my $fl = $1 // "";
+            push @tok, ["plain", $cur] if $cur ne "";
+            $cur = "";
+            my $content = "";
+            while (1) {
+                last if $s =~ s/^\\DIFdelend$fl//;
+                if ($s =~ s/^\\DIFdelFL\{([^{}]*)\}//) {
+                    $content .= $1;
+                } elsif ($s =~ s/^\s+//) {
+                    # separator between markers inside the region
+                } else {
+                    $content .= substr($s, 0, 1);
+                    $s = substr($s, 1);
+                }
+            }
+            push @tok, ["del", $content];
+            $just_dif = 1;
+            next;
+        }
+        if ($s =~ s/^\\DIFaddbegin(FL)?\s*//) {
+            my $fl = $1 // "";
+            push @tok, ["plain", $cur] if $cur ne "";
+            $cur = "";
+            my $content = "";
+            while (1) {
+                last if $s =~ s/^\\DIFaddend$fl//;
+                if ($s =~ s/^\\DIFaddFL\{([^{}]*)\}//) {
+                    $content .= $1;
+                } elsif ($s =~ s/^\s+//) {
+                    # separator between markers inside the region
+                } else {
+                    $content .= substr($s, 0, 1);
+                    $s = substr($s, 1);
+                }
+            }
+            push @tok, ["add", $content];
+            $just_dif = 1;
+            next;
+        }
+        if ($s =~ s/^\\DIFdelFL\{([^{}]*)\}//) {
+            push @tok, ["plain", $cur] if $cur ne "";
+            $cur = "";
+            push @tok, ["del", $1];
+            $just_dif = 1;
+            next;
+        }
+        if ($s =~ s/^\\DIFaddFL\{([^{}]*)\}//) {
+            push @tok, ["plain", $cur] if $cur ne "";
+            $cur = "";
+            push @tok, ["add", $1];
+            $just_dif = 1;
+            next;
+        }
+        if ($s =~ s/^\\DIF(?:del|add|mod)(?:begin|end)(?:FL)?//) {
+            $just_dif = 1;
+            next;
+        }
+        my $c = substr($s, 0, 1);
+        $s = substr($s, 1);
+        if ($just_dif && $trim && $c eq " " && $cur eq "") {
+            $just_dif = 0;
+            next;
+        }
+        $cur .= $c;
+        $just_dif = 0;
+    }
+    push @tok, ["plain", $cur] if $cur ne "";
+    return @tok;
+}
+
+# concatenate plain tokens plus the tokens of type $keep ("del" or "add")
+sub assemble_cmd {
+    my ($toks, $keep) = @_;
+    my $out = "";
+    foreach my $t (@$toks) {
+        $out .= $t->[1] if $t->[0] eq "plain" || $t->[0] eq $keep;
+    }
+    return $out;
+}
+
+# prefer the trimmed reconstruction if it occurs verbatim in the source,
+# fall back to the untrimmed one, then to the trimmed best-effort
+sub verify {
+    my ($trimmed, $untrimmed, $source) = @_;
+    return $trimmed   if index($source, $trimmed) >= 0;
+    return $untrimmed if index($source, $untrimmed) >= 0;
+    return $trimmed;
+}
+
+# --- main rewrite ----------------------------------------------------------
+my $count = 0;
+my $group = qr/\{(?:[^{}\\]|\\[A-Za-z]+|\{[^{}]*\})*\}/;
+
+$diff =~ s{(\\includegraphics(?:\[[^\]]*\])?)(\s*)($group)}{
+    my ($cmd, $ws, $g) = ($1, $2, $3);
+    if ($g !~ /\\DIF/ && $cmd !~ /\\DIF/) {
+        "$cmd$ws$g";
+    } else {
+        $count++;
+        my $full   = "$cmd$ws$g";
+        my @toks_t = tokenize($full, 1);
+        my @toks_u = tokenize($full, 0);
+        my $old    = verify(assemble_cmd(\@toks_t, "del"), assemble_cmd(\@toks_u, "del"), $oldsrc);
+        my $new    = verify(assemble_cmd(\@toks_t, "add"), assemble_cmd(\@toks_u, "add"), $newsrc);
+        my $oldok  = index($oldsrc, $old) >= 0 ? "ok" : "NOT verified";
+        my $newok  = index($newsrc, $new) >= 0 ? "ok" : "NOT verified";
+        my $show_old = $old;  $show_old =~ s/\n/\\n/g;
+        my $show_new = $new;  $show_new =~ s/\n/\\n/g;
+        print STDERR "fix-dif-includegraphics: spot #$count (old $oldok, new $newok)\n";
+        print STDERR "fix-dif-includegraphics:   old = $show_old\n";
+        print STDERR "fix-dif-includegraphics:   new = $show_new\n";
+        my @oldlines = split /\n/, $old, -1;
+        my @newlines = split /\n/, $new, -1;
+        "\\DIFdelbeginFL " . join("\n", map { "%DIFDELCMD < $_" } @oldlines)
+            . "\n%DIFDELCMD < %%%\n"
+            . "\\DIFdelendFL \\DIFaddbeginFL " . join("\n", @newlines)
+            . "\\DIFaddendFL";
+    }
+}ge;
+
+print STDERR "fix-dif-includegraphics: $count spot(s) rewritten\n";
+open my $fh, '>', $difffile or die "cannot write $difffile: $!";
+print $fh $diff;
+close $fh;
+LATEXDIFF_FIXIG_PERL
+    if ! perl "$fixer" "$1" "$2" "$3"; then
+	echo "git-latexdiff: warning: failed to fix \\includegraphics DIF markup in $1" >&2
+    fi
+    rm -f "$fixer"
 }
 
 # Run the TeX engine (or 'tectonic -X compile', which also runs
@@ -933,6 +1127,8 @@ if test "$flatten" = 1; then
       verbose_done
 
       fix_latexdiff_table_rules diff.tex
+      fix_latexdiff_includegraphics diff.tex "old-${mainbase}-fl.tex" "new-${mainbase}-fl.tex"
+      fix_latexdiff_comment_ends diff.tex
 
       verbose "mv ./diff.tex new/$main"
       mv -f new/"$main" new/"$main".orig
@@ -946,6 +1142,12 @@ else
     verbose_done
 
     fix_latexdiff_table_rules diff.tex
+    # The affected \includegraphics may live in \input'ed section files, so
+    # verify the reconstruction against the concatenation of all sources.
+    (cd old && find "$maindir" -name '*.tex' -print0 | sort -z | xargs -0 cat) > old-all-srcs.tex
+    (cd new && find "$maindir" -name '*.tex' -print0 | sort -z | xargs -0 cat) > new-all-srcs.tex
+    fix_latexdiff_includegraphics diff.tex old-all-srcs.tex new-all-srcs.tex
+    fix_latexdiff_comment_ends diff.tex
 
     verbose "mv ./diff.tex new/$main"
     mv -f new/"$main" new/"$main.orig"
